@@ -69,7 +69,7 @@ const handleUpdateProfile = async () => {
       >
         <el-form-item label="学号">
           <el-input
-            v-model="userStore.userInfo.studentId"
+            v-model="userStore.userInfo.username"
             disabled
           />
         </el-form-item>

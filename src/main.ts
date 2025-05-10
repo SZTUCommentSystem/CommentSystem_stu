@@ -7,10 +7,7 @@ import router from './router'
 import App from './App.vue'
 import './style.css'
 
-// 开发环境下引入 mock 服务
-if (import.meta.env.DEV) {
-  import('./mock')
-}
+
 
 const app = createApp(App)
 

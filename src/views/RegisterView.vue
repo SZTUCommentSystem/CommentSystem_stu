@@ -8,8 +8,7 @@ import { User, Lock, UserFilled } from '@element-plus/icons-vue'
 const router = useRouter()
 
 const registerForm = reactive({
-  studentId: '',
-  name: '',
+  username: '',
   password: '',
   confirmPassword: ''
 })
@@ -25,8 +24,7 @@ const handleRegister = async () => {
   try {
     loading.value = true
     await userApi.register({
-      studentId: registerForm.studentId,
-      name: registerForm.name,
+      username: registerForm.username,
       password: registerForm.password
     })
     ElMessage.success('注册成功')
@@ -55,17 +53,9 @@ const goToLogin = () => {
       <el-form :model="registerForm" class="register-form">
         <el-form-item>
           <el-input
-            v-model="registerForm.studentId"
+            v-model="registerForm.username"
             placeholder="请输入学号"
             :prefix-icon="User"
-            size="large"
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-input
-            v-model="registerForm.name"
-            placeholder="请输入姓名"
-            :prefix-icon="UserFilled"
             size="large"
           />
         </el-form-item>

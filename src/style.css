@@ -130,7 +130,7 @@ body {
 
 .el-input__inner {
   border-radius: 8px !important;
-}
+  }
 
 .el-menu {
   border-right: none !important;
@@ -139,7 +139,7 @@ body {
 .el-menu-item {
   border-radius: 8px !important;
   margin: 4px 8px !important;
-}
+  }
 
 .el-menu-item.is-active {
   background: linear-gradient(45deg, rgba(64, 158, 255, 0.1), rgba(64, 179, 255, 0.1)) !important;
@@ -154,7 +154,7 @@ body {
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
-}
+  }
 
 .fade-enter-from,
 .fade-leave-to {

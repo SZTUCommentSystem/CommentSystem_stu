@@ -5,8 +5,8 @@ import { ElMessage } from 'element-plus'
 import { classApi } from '../services/api'
 
 interface ClassInfo {
-  id: string
-  name: string
+  classId: string
+  classname: string
   teacher: string
 }
 
@@ -68,7 +68,7 @@ onMounted(() => {
     <el-row :gutter="20" class="class-list">
       <el-col
         v-for="item in classes"
-        :key="item.id"
+        :key="item.classId"
         :xs="24"
         :sm="12"
         :md="8"
@@ -77,10 +77,10 @@ onMounted(() => {
         <el-card
           class="class-card"
           shadow="hover"
-          @click="goToAssignments(item.id)"
+          @click="goToAssignments(item.classId)"
         >
-          <h3>{{ item.name }}</h3>
-          <p>班级ID：{{ item.id }}</p>
+          <h3>{{ item.classname }}</h3>
+          <p>班级ID：{{ item.classId }}</p>
           <p>教师：{{ item.teacher }}</p>
         </el-card>
       </el-col>

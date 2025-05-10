@@ -10,7 +10,7 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const loginForm = reactive({
-  studentId: '',
+  username: '',
   password: ''
 })
 
@@ -20,7 +20,8 @@ const handleLogin = async () => {
   try {
     loading.value = true
     const res = await userApi.login(loginForm)
-    userStore.setUserInfo(res.data)
+    console.log(res.token)
+    userStore.setUserInfo({username:loginForm.username,name:'',token:res.token})
     ElMessage.success('登录成功')
     router.push('/classes')
   } catch (error) {
@@ -47,7 +48,7 @@ const goToRegister = () => {
       <el-form :model="loginForm" class="login-form">
         <el-form-item>
           <el-input
-            v-model="loginForm.studentId"
+            v-model="loginForm.username"
             placeholder="请输入学号"
             :prefix-icon="User"
             size="large"

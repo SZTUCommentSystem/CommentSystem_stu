@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const request = axios.create({
-  baseURL: '/api',
+  baseURL: 'http://47.103.49.29:9024/',
   timeout: 5000
 })
 
@@ -34,22 +34,22 @@ request.interceptors.response.use(
 
 // 用户相关接口
 export const userApi = {
-  login: (data: { studentId: string; password: string }) => {
-    return request.post('/user/login', data)
+  login: (data: { username: string; password: string }) => {
+    return request.post('/login', data)
   },
-  register: (data: { studentId: string; name: string; password: string }) => {
-    return request.post('/user/register', data)
+  register: (data: { username: string;  password: string }) => {
+    return request.post('/register', data)
   },
   updateProfile: (data: { name?: string; password?: string }) =>
-    request.put('/user/profile', data)
+    request.put('/profile', data)
 }
 
 // 班级相关接口
 export const classApi = {
   joinClass: (classId: string) =>
-    request.post('/class/join', { classId }),
+    request.put('/function/student', { classId }),
   getJoinedClasses: () =>
-    request.get('/class/joined')
+    request.get('/function/bclass/1')
 }
 
 // 作业相关接口

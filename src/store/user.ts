@@ -3,7 +3,7 @@ import { ref } from 'vue'
 
 interface UserInfo {
   id: string
-  studentId: string
+  username: string
   name: string
   token: string
 }
@@ -15,7 +15,7 @@ export const useUserStore = defineStore('user', () => {
   
   const userInfo = ref<UserInfo>({
     id: '',
-    studentId: '',
+    username: '',
     name: '',
     token: storedToken || ''
   })
@@ -33,7 +33,7 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  const setUserInfo = (info: UserInfo) => {
+  const setUserInfo = (info) => {
     userInfo.value = info
     // 存储完整的用户信息
     localStorage.setItem('token', info.token)
@@ -43,7 +43,7 @@ export const useUserStore = defineStore('user', () => {
   const clearUserInfo = () => {
     userInfo.value = {
       id: '',
-      studentId: '',
+      username: '',
       name: '',
       token: ''
     }
