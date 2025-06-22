@@ -27,13 +27,13 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/assignments/:classId',
+      path: '/assignments/:studentId',
       name: 'assignments',
       component: () => import('../views/AssignmentsView.vue'),
       meta: { requiresAuth: true }
     },
     {
-      path: '/assignment/:assignmentId',
+      path: '/assignment/:homeworkId',
       name: 'assignmentDetail',
       component: () => import('../views/AssignmentDetailView.vue'),
       meta: { requiresAuth: true }
@@ -41,7 +41,7 @@ const router = createRouter({
     {
       path: '/submissions',
       name: 'submissions',
-      component: () => import('../views/SubmissionsView.vue'),
+      component: () => import('../views/SubmissionCenterView.vue'),
       meta: { requiresAuth: true }
     },
     {
@@ -75,14 +75,33 @@ router.beforeEach((to, from, next) => {
     }
   }
 
+  // 检查token是否过期
+  if (token && userStore.isTokenExpired()) {
+    console.log('Token已过期，清除登录状态')
+    userStore.clearUserInfo()
+    
+    // 如果要访问需要认证的页面，重定向到登录页
+    if (to.meta.requiresAuth) {
+      // 延迟显示消息，确保在页面加载后显示
+      setTimeout(() => {
+        import('element-plus').then(({ ElMessage }) => {
+          ElMessage.warning('登录已过期，请重新登录')
+        })
+      }, 100)
+      next('/login')
+      return
+    }
+  }
+
+
   // 需要游客权限的路由（登录、注册）
-  if (to.meta.requiresGuest && token) {
+  if (to.meta.requiresGuest && token && !userStore.isTokenExpired()) {
     next('/classes')
     return
   }
 
   // 需要登录权限的路由
-  if (to.meta.requiresAuth && !token) {
+  if (to.meta.requiresAuth && (!token || userStore.isTokenExpired())) {
     next('/login')
     return
   }

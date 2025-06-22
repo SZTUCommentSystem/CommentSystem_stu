@@ -41,7 +41,7 @@ const goToRegister = () => {
     <div class="login-content">
       <div class="login-header">
         <img src="/工程力学.svg" alt="Logo" class="logo" />
-        <h2>作业提交系统</h2>
+        <h2>课程实践平台</h2>
         <p class="subtitle">欢迎回来！请登录您的账号</p>
       </div>
       

@@ -1,46 +1,83 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { assignmentApi } from '../services/api'
+import { assignmentApi,topicApi } from '../services/api'
 
-interface Assignment {
-  id: string
-  title: string
-  directory: string
-  tags: string[]
-  deadline: string
-  teacher: string
-}
-
-const router = useRouter()
 const route = useRoute()
-const assignments = ref<Assignment[]>([])
-const loading = ref(false)
+const router = useRouter()
 
-const getAssignments = async () => {
-  const classId = route.params.classId as string
-  try {
-    loading.value = true
-    const res = await assignmentApi.getClassAssignments(classId)
-    assignments.value = res.data
-  } catch (error) {
-    console.error(error)
-  } finally {
-    loading.value = false
-  }
-}
+const assignments = ref<any[]>([])
+const loading = ref(true)
 
-const goToAssignmentDetail = (assignmentId: string) => {
-  router.push(`/assignment/${assignmentId}`)
+const labelCache = new Map<number, string>()
+const topicCache = new Map<number, number[]>()
+
+const studentId = String(route.params.studentId)
+
+const goToAssignmentDetail = (homeworkId: number) => {
+  router.push({ name: 'assignmentDetail', params: { homeworkId } })
 }
 
 const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleString()
+  const date = new Date(dateStr)
+  return date.toLocaleString('zh-CN', { hour12: false })
 }
 
-onMounted(() => {
-  getAssignments()
+onMounted(async () => {
+  try {
+    // const homeworklist = await assignmentApi.getHomeworkList()
+    // const rows = homeworklist.rows?.filter(item => item.studentId === studentId) || []
+    // const homeworkIds = [...new Set(rows.map(item => item.homeworkId))]
+    // for (const homeworkId of homeworkIds) {
+    //   const homeworkRes = await assignmentApi.getHomeworkDetail(homeworkId)
+    //   const detail = homeworkRes.data
+    //   const topicIds = detail.topicIds
+    //   ? detail.topicIds.split(',').map(id => Number(id.trim())).filter(id => !isNaN(id)): []
+    //   for (const topicId of topicIds){
+    //     const topicRes = await topicApi.getTopic(topicId)
+    //     const topicData = topicRes.data
+    //     const labelIds = topicData.labelIds
+    //     ? topicData.labelIds.split(',').map(id => Number(id.trim())).filter(id => !isNaN(id)): []
+    //     for (const labelId of labelIds){
+    //       const labelRes = await topicApi.getLabel(labelId)
+    //       const labelData = labelRes.data
+    //       labelCache.set(labelId, labelData.topicLabelName)
+    //     }
+    //   }
+    //   const tags = Array.from(labelCache.values())
+
+    //   assignments.value.push({
+    //     homeworkId: detail.homeworkId,
+    //     homeworkTitle: detail.homeworkTitle,
+    //     limitTime: detail.limitTime,
+    //     tags: tags
+    //   })
+    console.log('=== 开始获取作业数据 ===')
+    console.log('当前学生ID:', studentId)
+    
+    // 获取增强的作业学生列表（已包含作业详情和标签信息）
+    const homeworklist = await assignmentApi.getHomeworkList()
+    console.log('获取到的作业学生列表:', homeworklist)
+    
+    // 筛选当前学生的作业记录
+    const rows = homeworklist.rows?.filter(item => item.studentId === studentId) || []
+    console.log('筛选后的作业记录:', rows)
+    
+    // 直接使用增强数据构建作业列表
+    assignments.value = rows.map(item => ({
+      homeworkId: item.homeworkId,
+      homeworkTitle: item.homeworkTitle,
+      limitTime: item.limitTime,
+      tags: item.tags || []
+    }))
+    
+    console.log('=== 最终作业列表 ===', assignments.value)
+  } catch (err) {
+    ElMessage.error('获取作业失败')
+  } finally {
+    loading.value = false
+  }
 })
 </script>
 
@@ -55,24 +92,24 @@ onMounted(() => {
       :data="assignments"
       style="width: 100%"
     >
-      <el-table-column prop="title" label="标题" min-width="150">
+      <el-table-column prop="homeworkId" label="作业ID" min-width="120" />
+
+      <el-table-column prop="homeworkTitle" label="标题" min-width="150">
         <template #default="{ row }">
-          <el-button
-            type="text"
-            @click="goToAssignmentDetail(row.id)"
-          >
-            {{ row.title }}
+          <el-button type="text" @click="goToAssignmentDetail(row.homeworkId)">
+            {{ row.homeworkTitle }}
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column prop="directory" label="目录" min-width="120" />
-      <el-table-column label="标签" min-width="150">
+
+      <el-table-column label="标签" min-width="180">
         <template #default="{ row }">
           <el-tag
             v-for="tag in row.tags"
             :key="tag"
             size="small"
-            style="margin-right: 5px"
+            type="info"
+            class="tag"
           >
             {{ tag }}
           </el-tag>
@@ -80,10 +117,9 @@ onMounted(() => {
       </el-table-column>
       <el-table-column label="截止时间" min-width="180">
         <template #default="{ row }">
-          {{ formatDate(row.deadline) }}
+          {{ formatDate(row.limitTime) }}
         </template>
       </el-table-column>
-      <el-table-column prop="teacher" label="布置老师" min-width="120" />
     </el-table>
   </div>
 </template>
@@ -92,11 +128,12 @@ onMounted(() => {
 .assignments-container {
   padding: 20px;
 }
-
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 20px;
 }
-</style> 
+.tag {
+  margin-right: 5px;
+  margin-bottom: 4px;
+  display: inline-block;
+}
+</style>

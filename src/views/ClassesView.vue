@@ -2,15 +2,19 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { classApi } from '../services/api'
+import { classApi,userApi,studentApi,courseApi } from '../services/api'
+import { useUserStore } from '../store/user'
 
 interface ClassInfo {
   classId: string
-  classname: string
-  teacher: string
+  courseId: string
+  className: string
+  courseName: string
+  studentId: string
 }
 
 const router = useRouter()
+const userStore = useUserStore()
 const classes = ref<ClassInfo[]>([])
 const classIdInput = ref('')
 const loading = ref(false)
@@ -19,10 +23,53 @@ const joinDialogVisible = ref(false)
 const getClasses = async () => {
   try {
     loading.value = true
-    const res = await classApi.getJoinedClasses()
-    classes.value = res.data
+    
+    // 1. 获取当前用户信息
+    const userRes = await userApi.getInfo()
+    const userId = userRes.user.userId
+
+    // 2. 获取学生列表并匹配班级ID
+    const studentRes = await studentApi.getStudentList();
+    const studentList = studentRes.rows || []; 
+    const studentInfo = studentList.find((s: any) => s.userId === userId); 
+    if (!studentInfo) {
+      ElMessage.error('未找到学生信息')
+      return
+          }
+      
+      // 保存studentId到user store
+      userStore.setStudentId(studentInfo.studentId)
+    // 3. 获取班级详细信息
+    const classIdlist = await classApi.getClasses({pageNum:'1',pageSize:'999',studentId: studentInfo?.studentId}) 
+    
+    
+    // 4. 遍历每个班级ID，获取班级信息和课程信息
+    const classInfoPromises = classIdlist.rows.map(async (classItem: any) => {
+      try {
+        // 获取班级详细信息
+        const classInfo = await classApi.getClassInfo(classItem.classId)
+        // 获取课程信息
+        const courseInfo = await courseApi.getCourseInfo(classInfo.data.courseId)
+        
+        return {
+          classId: classItem.classId,
+          courseId: classInfo.data.courseId,
+          className: classInfo.data.className,
+          courseName: courseInfo.data.courseName,
+          studentId: studentInfo.studentId,
+        }
+      } catch (error) {
+        console.error(`获取班级 ${classItem.classId} 信息失败:`, error)
+        return null
+      }
+    })
+    
+    const classResults = await Promise.all(classInfoPromises)
+    classes.value = classResults.filter(item => item !== null) as ClassInfo[]
+
   } catch (error) {
     console.error(error)
+    ElMessage.error('获取班级信息失败')
   } finally {
     loading.value = false
   }
@@ -36,7 +83,21 @@ const handleJoinClass = async () => {
 
   try {
     loading.value = true
-    await classApi.joinClass(classIdInput.value)
+    // 1. 获取当前用户信息
+    const userRes = await userApi.getInfo()
+    const userId = userRes.user.userId
+    // 2. 获取学生id
+    const studentRes = await studentApi.getStudentList();
+    const studentList = studentRes.rows || []; 
+    const studentInfo = studentList.find((s: any) => s.userId === userId); 
+    
+    // 保存studentId到user store（如果还没有保存的话）
+    if (!userStore.userInfo.studentId) {
+      userStore.setStudentId(studentInfo.studentId)
+      console.log('已保存studentId到store:', studentInfo.studentId)
+    }
+    
+    await classApi.joinClass({studentId:studentInfo.studentId,classId:classIdInput.value})
     ElMessage.success('加入班级成功')
     joinDialogVisible.value = false
     await getClasses()
@@ -47,8 +108,17 @@ const handleJoinClass = async () => {
   }
 }
 
-const goToAssignments = (classId: string) => {
-  router.push(`/assignments/${classId}`)
+const goToAssignments = (studentId:string) => {
+  console.log('从班级页面跳转到作业列表，studentId:', studentId)
+  try {
+    router.push({
+      name: 'assignments',
+      params: { studentId: String(studentId) }
+    })
+  } catch (error) {
+    console.error('跳转到作业列表失败:', error)
+    ElMessage.error('页面跳转失败')
+  }
 }
 
 onMounted(() => {
@@ -68,7 +138,7 @@ onMounted(() => {
     <el-row :gutter="20" class="class-list">
       <el-col
         v-for="item in classes"
-        :key="item.classId"
+        :key="item.courseId"
         :xs="24"
         :sm="12"
         :md="8"
@@ -77,11 +147,10 @@ onMounted(() => {
         <el-card
           class="class-card"
           shadow="hover"
-          @click="goToAssignments(item.classId)"
+          @click="goToAssignments(item.studentId)"
         >
-          <h3>{{ item.classname }}</h3>
-          <p>班级ID：{{ item.classId }}</p>
-          <p>教师：{{ item.teacher }}</p>
+          <h3>{{ item.className }}</h3>
+          <p>课程：{{ item.courseName }}</p>
         </el-card>
       </el-col>
     </el-row>
@@ -147,4 +216,4 @@ p {
   margin: 5px 0;
   color: #666;
 }
-</style> 
+</style>
